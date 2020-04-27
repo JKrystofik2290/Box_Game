@@ -1,147 +1,143 @@
 import pygame, sys, random
 
-
+# ------------
 # init program
+# ------------
 pygame.init()
 clock = pygame.time.Clock()
-screen_x = 1200
-screen_mid_x = round(screen_x/2)
-screen_y = 800
-screen_mid_y = round(screen_y/2)
-screen = pygame.display.set_mode((screen_x,screen_y))
-pygame.display.set_caption("Python Pong")
-bg_color = pygame.Color('grey12')
-obj_color = (200,200,200)
+pygame.display.set_caption("Box Game")
 game_font = pygame.font.Font("freesansbold.ttf", 24)
 
 
-# init objects
-ball_size = (30,30)
-ball_pos = (round(screen_mid_x - ball_size[0]/2), round(screen_mid_y - ball_size[0]/2))
-ball = pygame.Rect(ball_pos, ball_size)
-collision_on = True
-paddle_size = (10,140)
-player_pos = (round(screen_x - (paddle_size[0] + 20)), round(screen_mid_y - paddle_size[1]/2))
-player = pygame.Rect(player_pos, paddle_size)
-player_speed = 0
-opponent_pos = (20, round(screen_mid_y - paddle_size[1]/2))
-opponent = pygame.Rect(opponent_pos, paddle_size)
-opponent_speed = 7
-volly_count = 0
-# 0 - AI doesnt move
-# 3 - easy
-# 10 - Impossible
-difficulty = 3
+# ------------
+#   classes
+# ------------
+class screen():
+    def __init__(self, w, h, color):
+        self.w = w
+        self.h = h
+        self.color = color
+        self.mid_w = w/2
+        self.mid_h = h/2
+        self.obj = pygame.display.set_mode((w,h))
+class player():
+    def __init__(self, start_w, start_h, start_x, start_y, color):
+        self.start_w = start_w
+        self.start_h = start_h
+        self.start_x = start_x
+        self.start_y = start_y
+        self.color = color
+        self.obj = pygame.Rect(start_x, start_y, start_w, start_h)
+        self.jumping = False
+        self.grounded = False
+        self.speed_x = 0
+        self.speed_y = 0
+    def animation(self):
+        if start:
+            self.obj.x += self.speed_x
+            self.obj.y += self.speed_y
+            if self.jumping:
+                self.obj.y -= self.speed_y
+                self.speed_y -= 1
+                if self.speed_y <= 0:
+                    self.jumping = False
+            else:
+                # gravity
+                # self.obj.y += 8
+                for plat in platforms:
+                    print(self.obj.colliderect(plat.obj))
+                    if self.obj.colliderect(plat.obj):
+                        if abs(self.obj.bottom - plat.obj.top) < abs(self.obj.top - plat.obj.bottom):
+                            self.grounded = True
+                            self.jumping = False
+                            self.speed_y = 0
+                            self.obj.bottom = plat.obj.top + 1
+                            # self.obj.x -= plat.speed_x
+                        elif abs(self.obj.bottom - plat.obj.top) > abs(self.obj.top - plat.obj.bottom):
+                            self.jumping = False
+                            self.speed_y = 0
+                            self.obj.top = plat.obj.bottom
+    def jump(self):
+        if self.grounded:
+            self.grounded = False
+            self.jumping = True
+            self.speed_y = 24
+class platform():
+    def __init__(self, start_w, start_h, start_x, start_y, color):
+        self.start_w = start_w
+        self.start_h = start_h
+        self.start_x = start_x
+        self.start_y = start_y
+        self.color = color
+        self.speed_x = 4
+        self.speed_y = 0
+        self.obj = pygame.Rect(start_x, start_y, start_w, start_h)
+    def move(self):
+        self.obj.x -= self.speed_x
 
 
-# classes
-class ball_speed():
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-ball_speed = ball_speed(7 * random.choice((1,-1)), 7 * random.choice((1,-1)))
-
-class score():
-    def __init__(self, opponent, player):
-        self.opponent = opponent
-        self.player = player
-score = score(0, 0)
+# -----------------------
+# init objects/variables
+# -----------------------
+screen = screen(1000, 500, (0,0,0))
+player = player(25, 25, round(screen.mid_w - 300), round(screen.mid_h + 125), (200,200,200))
+start = False
+platform_color = (50,255,50)
+platforms = [platform(400, 25, round(screen.mid_w - 300), round(screen.mid_h + 150),platform_color), platform(200, 25, round(screen.mid_w + 400), round(screen.mid_h + 50),platform_color),platform(400, 25, round(screen.mid_w - 200), round(screen.mid_h),platform_color)]
 
 
-# functions
-def ball_animation():
-    global collision_on, volly_count, opponent_speed
-    ball.x += ball_speed.x
-    ball.y += ball_speed.y
-    if ball.top <= 0 or ball.bottom >= screen_y:
-        ball_speed.y *= -1
-    if ball.left <= 0:
-        score.player += 1
-        ball_reset()
-    if ball.right >= screen_x:
-        score.opponent += 1
-        ball_reset()
-    if (ball.colliderect(player) or ball.colliderect(opponent)) and collision_on:
-        ball_speed.x *= -1
-        if (player_speed > 0 and ball_speed.y < 0) or (player_speed < 0 and ball_speed.y > 0):
-            ball_speed.y *= -1
-        collision_on = False
-        volly_count += 1
-        if volly_count >= 2:
-            volly_count = 0
-            opponent_speed += 1
-            if ball_speed.x >= 0:
-                ball_speed.x += 1
-            else: ball_speed.x -= 1
-            if ball_speed.y >= 0:
-                ball_speed.y += 1
-            else: ball_speed.y -= 1
-    elif ball.colliderect(player) == False and ball.colliderect(opponent) == False:
-        collision_on = True
-
-def ball_reset():
-    global volly_count, ball_speed, opponent_speed
-    volly_count = 0
-    opponent_speed = 7
-    ball.center = (screen_mid_x, screen_mid_y)
-    ball_speed.x = 7 * random.choice((1,-1))
-    ball_speed.y = 7 * random.choice((1,-1))
-
-def player_animation():
-    # player_speed & screen_y do not need to be global because I am not writing to them only reading
-    player.y += player_speed
-    if player.top <= 0:
-        player.top = 0
-    if player.bottom >= screen_y:
-        player.bottom = screen_y
-
-def opponent_AI():
-    # AI difficulty?????
-    AI_choice = random.randint(1,10)
-    if opponent.top > ball.y:
-        opponent.top -= opponent_speed
-    else: opponent.top += opponent_speed
-    if opponent.bottom < ball.y:
-        opponent.top += opponent_speed
-    else: opponent.top -= opponent_speed
-    if opponent.top <= 0:
-        opponent.top = 0
-    if opponent.bottom >= screen_y:
-        opponent.bottom = screen_y
-    opponent.y += opponent_speed
-
-def screen_update():
-    # draw order matters. First is in background last is on top.
-    screen.fill(bg_color)
-    pygame.draw.aaline(screen, obj_color, (screen_mid_x,0), (screen_mid_x,screen_y))
-    # pygame.draw.Rect(surface, color, rect)
-    pygame.draw.rect(screen, obj_color, player)
-    pygame.draw.rect(screen, obj_color, opponent)
-    pygame.draw.ellipse(screen, obj_color, ball)
-    player_score = game_font.render(f"{score.player}", False, obj_color)
-    screen.blit(player_score, (screen_mid_x + 20, screen_mid_y))
-    opponent_score = game_font.render(f"{score.opponent}", False, obj_color)
-    screen.blit(opponent_score, (screen_mid_x - opponent_score.get_rect().width - 20, screen_mid_y))
-    pygame.display.flip()
-
+# ------------
+#  functions
+# ------------
 def event_handler(event):
-    global player_speed
+    global start
     if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
     if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_UP:
-            player_speed -= 7
-        if event.key == pygame.K_DOWN:
-            player_speed += 7
-    if event.type == pygame.KEYUP:
-        if event.key == pygame.K_UP:
-            player_speed += 7
-        if event.key == pygame.K_DOWN:
-            player_speed -= 7
+        if event.key == pygame.K_SPACE:
+            if start:
+                player.jump()
+            else: start = True
+        if start:
+            if event.key == pygame.K_LEFT:
+                player.speed_x -= 2
+            if event.key == pygame.K_RIGHT:
+                player.speed_x += 2
+            if event.key == pygame.K_UP:
+                player.speed_y -= 2
+            if event.key == pygame.K_DOWN:
+                player.speed_y += 2
+    if start:
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                player.speed_x += 2
+            if event.key == pygame.K_RIGHT:
+                player.speed_x -= 2
+            if event.key == pygame.K_UP:
+                player.speed_y += 2
+            if event.key == pygame.K_DOWN:
+                player.speed_y -= 2
+def screen_update():
+    screen.obj.fill(screen.color)
+    pygame.draw.rect(screen.obj, player.color, player.obj)
+    for plat in platforms:
+        pygame.draw.rect(screen.obj, plat.color, plat.obj)
+    pygame.display.flip()
+def spawn_platform(platforms):
+    # spawn range 500 - 900
+    if random.randint((screen.w - 800),(screen.w - 200)) <= platforms[-1].obj.right <= (screen.w - 200):
+        new_plat_w = random.randint(25,300)
+        new_plat_y = random.randint(50,screen.h - 25)
+        platforms.append(platform(new_plat_w, 25, screen.w, new_plat_y,platform_color))
+    if platforms[0].obj.right <= 0:
+        platforms.pop(0)
+    return platforms
 
 
-# Main Loop
+# ------------
+#  Main Loop
+# ------------
 while True:
 
     # event handler
@@ -149,12 +145,26 @@ while True:
         event_handler(event)
 
     # update animations
-    ball_animation()
-    player_animation()
-    opponent_AI()
+    player.animation()
+    platforms = spawn_platform(platforms)
+    # if start:
+    #     for plat in platforms:
+    #         plat.move()
 
     # screen update
     screen_update()
-
-    # frames per second
     clock.tick(60)
+
+
+
+# todo:
+    # grounded = True if touch side of plat???? able to jump again?????
+    # play with different plat speeds
+    # keep???? if slide off platform player can still jump once in air
+    # figure out y bounds to spawn platforms in and x bounds from previous platform
+    # add collision with bottom and sides of platforms
+    # player move with platforms when grounded????????
+    # add roof for player??????
+    # player die and game reset when fall off bottom of screen
+    # add score = to time survived
+    # add text at start "Press Space to Start" then remove once start
