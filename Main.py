@@ -1,69 +1,71 @@
 import pygame, sys, random
 
-
-# classes
-class player():
-    def __init__(self, obj, size, position, speed, color):
-        self.obj = obj
-        self.size = size
-        self.pos = position
-        self.speed = speed
-        self.color = color
-
-class screen():
-    def __init__(self, obj, x, y, mid_x, mid_y, color):
-        self.obj = obj
-        self.x = x
-        self.y = y
-        self.mid_x = mid_x
-        self.mid_y = mid_y
-        self.color = color
-
-
 # init program
 pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_caption("Box Game")
 game_font = pygame.font.Font("freesansbold.ttf", 24)
 
+# classes
+class screen():
+    def __init__(self, w, h, color):
+        self.w = w
+        self.h = h
+        self.color = color
+        self.mid_w = w/2
+        self.mid_h = h/2
+        self.obj = pygame.display.set_mode((w,h))
+class player():
+    def __init__(self, start_w, start_h, start_x, start_y, color):
+        self.start_w = start_w
+        self.start_h = start_h
+        self.start_x = start_x
+        self.start_y = start_y
+        self.color = color
+        self.obj = pygame.Rect(start_x, start_y, start_w, start_h)
+        self.jumping = False
+        self.speed_x = 0
+        self.speed_y = 0
+    def gravity(self):
+        if self.obj.colliderect(platform.obj):
+            self.obj.bottom = platform.obj.top + 1
+        else: self.obj.y += 8
+    def jump(self):
+        #add check that player is jumping from ground and cannot jump again till touch ground again
+        self.jumping = True
+        player.speed_y = 24
+
+class platform():
+    def __init__(self, start_w, start_h, start_x, start_y, color):
+        self.start_w = start_w
+        self.start_h = start_h
+        self.start_x = start_x
+        self.start_y = start_y
+        self.color = color
+        self.obj = pygame.Rect(start_x, start_y, start_w, start_h)
+    def move(self):
+        self.obj.x -= 3.2
+
 
 # init objects
-screen = screen()
-screen.x = 1000
-screen.mid_x = round(screen.x/2)
-screen.y = 500
-screen.mid_y = round(screen.y/2)
-screen.obj = pygame.display.set_mode((screen.x,screen.y))
-screen.color = (0,0,0)
-player = player()
-player.size = (25,25)
-player.pos = (screen.mid_x - 200, screen.mid_y)
-player.obj = pygame.Rect(player.pos, player.size)
-player.speed = 0
-player.color = (200,200,200)
-
+screen = screen(1000, 500, (0,0,0))
+player = player(25, 25, round(screen.mid_w - 300), round(screen.mid_h), (200,200,200))
+platform = platform(100, 25, round(screen.mid_w - 300), round(screen.mid_h + 200), (50,255,50))
 
 # functions
-def screen_update():
-    screen.obj.fill(screen.color)
-    pygame.draw.rect(screen.obj, player.color, player.obj)
-    pygame.display.flip()
-
 def event_handler(event):
-    global player_speed
+
     if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
     if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_UP:
-            player_speed -= 7
-        if event.key == pygame.K_DOWN:
-            player_speed += 7
-    if event.type == pygame.KEYUP:
-        if event.key == pygame.K_UP:
-            player_speed += 7
-        if event.key == pygame.K_DOWN:
-            player_speed -= 7
+        if event.key == pygame.K_SPACE:
+            player.jump()
+def screen_update():
+    screen.obj.fill(screen.color)
+    pygame.draw.rect(screen.obj, player.color, player.obj)
+    pygame.draw.rect(screen.obj, platform.color, platform.obj)
+    pygame.display.flip()
 
 
 # Main Loop
@@ -74,7 +76,12 @@ while True:
         event_handler(event)
 
     # update animations
-
+    if player.jumping:
+        player.obj.y -= player.speed_y
+        player.speed_y -= 1
+        if player.speed_y <= 0:
+            player.jumping = False
+    else:player.gravity()
 
     # screen update
     screen_update()
