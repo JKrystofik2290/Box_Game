@@ -48,18 +48,19 @@ class player():
                     print(self.obj.colliderect(plat.obj))
                     if self.obj.colliderect(plat.obj):
                         if abs(self.obj.bottom - plat.obj.top) < abs(self.obj.top - plat.obj.bottom):
-                            self.grounded = True
-                            self.jumping = False
-                            self.speed_y = 0
+                            # self.grounded = True
+                            # self.jumping = False
+                            # self.speed_y = 0
                             self.obj.bottom = plat.obj.top + 1
                             # self.obj.x -= plat.speed_x
                         elif abs(self.obj.bottom - plat.obj.top) > abs(self.obj.top - plat.obj.bottom):
-                            self.jumping = False
-                            self.speed_y = 0
+                            # self.jumping = False
+                            # self.speed_y = 0
                             self.obj.top = plat.obj.bottom
     def jump(self):
-        if self.grounded:
-            self.grounded = False
+        # if self.grounded:
+        if True:
+            # self.grounded = False
             self.jumping = True
             self.speed_y = 24
 class platform():
